@@ -69,3 +69,11 @@ fast-forward merge
 해 볼까?
 
 ffbranch를 생성한 후, main에서는 commit 생성 없이 바로 결합해 보자
+
+terminal 창에 fast-forward가 표시됨을 알 수 있음
+비유하자면 새로 생성한 branch더러 "지금부터 니 이름은 main이여"라고 선언하는 효과
+
+rebase and merge
+rebase: 새로 생성한 branch의 시작점을 기준이 되는 branch의 가장 최근 commit으로
+옮긴 다음 fast-forward 방식으로 결합하는 것
+이것도 한 번 해 보자
