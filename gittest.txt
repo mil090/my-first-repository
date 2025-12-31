@@ -49,3 +49,10 @@ branch ex1에서 만든 코드가 성공적으로 실행되어서 이를 main br
 합치고 싶으면?
 merge 명령어를 사용하면 된다!
 우선 기준이 되는 branch인 main으로 이동
+
+참고로 branch는 합쳐도 남아 있음. 다 사용한 branch는
+merge가 완료된 branch는
+git branch -d branch명
+merge가 완료되지 않은 branch는
+git brench -D branch명
+으로 삭제할 수 있다
