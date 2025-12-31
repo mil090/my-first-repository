@@ -30,8 +30,6 @@ difftool 다음에 특정 commit id 두 개를 입력하면 두 특정 commit을
 Extension 메뉴에서 git과 관련된 것들을 설치하면 보다 편리하게 버전 비교가 가능
 여러 익스텐션을 설치해 보자
 Git Graph, Git History, GitLens 등
-<<<<<<< HEAD
-
 branch
 기존의 소스 코드는 안전하게 보관하고, 새로운 코드를 테스트하고자 하는 상황
 해당 코드 파일의 복사본에 새로운 코드를 테스트하기 위해 branch를 이용
@@ -44,7 +42,6 @@ GitLens에서도 이 branch를 전환할 수 있다
 컴퓨터가 둘 중 어떤 것을 선택할지 결정하지 못하기 때문
 한 번 해 볼까?
 한 번 더 연습하기: branch ex1에서 ex2.txt 파일을 만들어 내용 작성 후 합치기
-=======
 branch별로 같은 이름의 파일이라도 서로 다른 것이다
 branch를 바꾸면 내용이 바뀌는 것을 확인할 수 있음
 이렇게 두 branch main과 ex1에서 두 번씩 commit을 해 보았다!
@@ -52,4 +49,3 @@ branch ex1에서 만든 코드가 성공적으로 실행되어서 이를 main br
 합치고 싶으면?
 merge 명령어를 사용하면 된다!
 우선 기준이 되는 branch인 main으로 이동
->>>>>>> ex1
