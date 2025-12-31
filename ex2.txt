@@ -1,0 +1,6 @@
+branch 연습을 위해 ex2 파일을 branch ex1에 생성하였다
+aaaaaaaaaaa
+bbbbbbbbb
+cccccccccccccccc
+코딩이 완료되어 테스트를 진행
+테스트가 성공적으로 완료되어 이 파일을 main에 합치고자 함
