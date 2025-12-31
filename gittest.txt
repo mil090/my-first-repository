@@ -75,5 +75,5 @@ terminal 창에 fast-forward가 표시됨을 알 수 있음
 
 rebase and merge
 rebase: 새로 생성한 branch의 시작점을 기준이 되는 branch의 가장 최근 commit으로
-옮긴 다음 fast-forward 방식으로 결합하는 것
+옮긴 다음 fast-forward 방식으로 결합하는 것. rebase에서도 수정을 가하고 commit
 이것도 한 번 해 보자
