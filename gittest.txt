@@ -56,3 +56,14 @@ git brench -D branch명
 으로 삭제할 수 있다
 
 conflict 없이 merge가 이루어졌음을 알 수 있음
+다 사용한 branch는 삭제하자
+내게 그런 날이 올지 모르지만, 여러 사람들과 함께 개발할 때 편리한 기능이다
+이렇게 merge를 이용하여 두 branch를 결합할 때, 각 branch에 새로운 commit이 각각
+1회 이상 있다면 두 branch의 코드를 합쳐서 새로운 commit을 자동으로 생성.
+앞에서 이루어진 branch1을 이용한 merge도 이와 같은 방법으로 진행
+이것을 3-way merge라고 정의
+
+fast-forward merge
+새로 만든 branch에만 commit이 있고, 기준이 되는 branch에는 commit이 없는 경우
+이 경우 merge를 진행하면 fast-forward merge가 되었다고 뜸
+해 볼까?
