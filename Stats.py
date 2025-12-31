@@ -34,10 +34,11 @@ class BattingEvent(Enum):
 # 진루타 타점: 타자는 땅볼로 아웃되나 그 사이 3루 주자가 득점하는 상황
 # 진루타 타점은 3루 주자에만 해당됨
     GROUNDOUT_RBI=auto()
-# 특수 계열: 병살타, 희생번트, 희생플라이
+# 특수 계열: 병살타, 희생번트, 희생플라이, 득점이 있는 병살타
     GIDP=auto()
     SAC_BUNT=auto()
     SAC_FLY=auto()
+    GIDP_RUN=auto()
 # 야수선택, 타격방해, 인필드 플라이 등은 추후 처리
 
 # 12-2. 투수 이벤트 설계
@@ -138,6 +139,8 @@ class Stats:
             self._handle_groundout_adv()
         elif event==BattingEvent.GROUNDOUT_RBI:
             self._handle_groundout_rbi()
+        elif event==BattingEvent.GIDP_RUN:
+            self._handle_gidp_run()
         else:
             raise ValueError(f'Unhandled BattingEvent: {event}')
 # 3. 투수가 잡은 아웃카운트 계산
@@ -268,7 +271,13 @@ class Stats:
 # 일반 아웃과 똑같이 처리됨(타자는 타수만 증가, 투수는 상대 타수와 아웃 증가)
     def _handle_groundout_rbi(self):
         self._handle_out()
-# 추가 과제: 각 기록을 이용한 비율 기록을 구현해야 함
+# 11. 득점이 나오는 병살타(GIDP_RUN)
+# Stats에서 처리하는 기록은 병살타와 동일
+# 타자: 타수+1, 병살타+1
+# 투수: 상대타수+1, 아웃+2
+# 득점, 실점은 Game에서 구현
+    def _handle_gidp_run(self):
+        self._handle_gidp()
 
 # 투수의 고유 이벤트에 대한 기록 처리 함수
 # 폭투나 보크는 타석의 결과로 발생하는 결과가 아니기 때문에, record_plate_appearance
