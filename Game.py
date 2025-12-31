@@ -645,6 +645,8 @@ if __name__=='__main__':
     print(f'{game1.inning}회', '초' if game1.is_top else '말', f': {game1.away.team_name if game1.is_top else game1.home.team_name}공격')
     game1.print_last_logs(len(game1.logs))
     game1.get_current_score()
+    game1.away.get_current_batter().name
+
 # 1이닝 진행 프로그램으로 병합
 # 아래를 실행하기 전에 라인업을 초기화할 것
     events_by_inning1={1: (top_1_events, bot_1_events)}
