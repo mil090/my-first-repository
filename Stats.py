@@ -31,6 +31,9 @@ class BattingEvent(Enum):
 # 진루타 땅볼: 타자는 땅볼로 아웃되나 그 사이 주자가 한 베이스 진루하는 상황
 # 진루타 땅볼은 1, 2루 주자에만 해당됨. 3루 주자가 땅볼로 득점하는 것은 따로 구현
     GROUNDOUT_ADV=auto()
+# 진루타 타점: 타자는 땅볼로 아웃되나 그 사이 3루 주자가 득점하는 상황
+# 진루타 타점은 3루 주자에만 해당됨
+    GROUNDOUT_RBI=auto()
 # 특수 계열: 병살타, 희생번트, 희생플라이
     GIDP=auto()
     SAC_BUNT=auto()
@@ -133,6 +136,8 @@ class Stats:
             self._handle_sac_fly()
         elif event==BattingEvent.GROUNDOUT_ADV:
             self._handle_groundout_adv()
+        elif event==BattingEvent.GROUNDOUT_RBI:
+            self._handle_groundout_rbi()
         else:
             raise ValueError(f'Unhandled BattingEvent: {event}')
 # 3. 투수가 잡은 아웃카운트 계산
@@ -258,6 +263,10 @@ class Stats:
 # 9. 득점 없는 진루타 땅볼(GROUNDOUT_ADV)
 # 일반 아웃과 똑같이 처리됨(타자는 타수만 증가, 투수는 상대 타수와 아웃 증가)
     def _handle_groundout_adv(self):
+        self._handle_out()
+# 10. 땅볼 타점(GROUNDOUT_RBI)
+# 일반 아웃과 똑같이 처리됨(타자는 타수만 증가, 투수는 상대 타수와 아웃 증가)
+    def _handle_groundout_rbi(self):
         self._handle_out()
 # 추가 과제: 각 기록을 이용한 비율 기록을 구현해야 함
 
