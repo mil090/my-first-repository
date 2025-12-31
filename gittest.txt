@@ -1,5 +1,3 @@
-hello, world!
-python programming is fun!
 i am learning git now
 i think it is a little difficult :<
 내 코딩을 기록하기 위해 깃을 설치하여 사용법을 익히는 중이다
