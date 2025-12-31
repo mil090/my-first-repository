@@ -33,3 +33,7 @@ Git Graph, Git History, GitLens 등
 branch별로 같은 이름의 파일이라도 서로 다른 것이다
 branch를 바꾸면 내용이 바뀌는 것을 확인할 수 있음
 이렇게 두 branch main과 ex1에서 두 번씩 commit을 해 보았다!
+branch ex1에서 만든 코드가 성공적으로 실행되어서 이를 main branch로
+합치고 싶으면?
+merge 명령어를 사용하면 된다!
+우선 기준이 되는 branch인 main으로 이동
