@@ -1,0 +1,4 @@
+hello, world!
+python programming is fun!
+i am learning git now
+i think it is a little difficult :<
