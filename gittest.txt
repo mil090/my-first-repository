@@ -67,3 +67,5 @@ fast-forward merge
 새로 만든 branch에만 commit이 있고, 기준이 되는 branch에는 commit이 없는 경우
 이 경우 merge를 진행하면 fast-forward merge가 되었다고 뜸
 해 볼까?
+
+ffbranch를 생성한 후, main에서는 commit 생성 없이 바로 결합해 보자
