@@ -12,3 +12,6 @@ i think it is a little difficult :<
 일단 설치해서 해 보고 있다
 commit으로 각 기록에 대한 주석을 달 수 있는 것 같다
 그런데 commit을 쓰려면 변화한 내용 다음 저장을 해야 하는 건가?
+dkanfoeh
+아무래도 그런 것 같다
+지금 여섯 번째 commit을 써 보려고 한다
