@@ -2,3 +2,9 @@ hello, world!
 python programming is fun!
 i am learning git now
 i think it is a little difficult :<
+내 코딩을 기록하기 위해 깃을 설치하여 사용법을 익히는 중이다
+그런데 아직은 잘 적응이 안 되는 것 같다
+적응하려면 시간이 좀 걸리겠지만 능숙해진다면 정말 유익하게 사용할 수 있을 것 같다
+지금은 commit을 연습하는 중이다
+그런데 아직 뭐가 뭔지 잘 모르겠다
+헷갈리는 게 여전히 많다
