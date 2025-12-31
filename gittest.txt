@@ -37,3 +37,4 @@ branch
 branch를 main으로 바꾸면 ex1 파일이 사라지는 것을 알 수 있다
 이 파일은 ex1에서 만든 것이지 main에서 만든 게 아니므로 main에서는 표시되지 않음
 branch를 ex1로 바꾸면 다시 나타나는 것을 확인할 수 있다
+GitLens에서도 이 branch를 전환할 수 있다
