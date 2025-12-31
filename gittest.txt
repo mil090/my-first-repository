@@ -55,3 +55,4 @@ merge가 완료되지 않은 branch는
 git brench -D branch명
 으로 삭제할 수 있다
 
+conflict 없이 merge가 이루어졌음을 알 수 있음
