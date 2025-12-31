@@ -199,6 +199,31 @@ class Game:
                 if self.bases.is_1B_loaded() and not self.bases.is_2B_loaded():
                     self.bases.move_1B_to_2B()
             return outs_added, 0
+# 땅볼 타점이 발생했을 때
+# 3루 주자 득점, 다른 주자들은 1베이스씩 진루
+        if event==BattingEvent.GROUNDOUT_RBI:
+            outs_added+=1
+            runs=0
+# 만약 2아웃이라면 땅볼 아웃으로는 득점이 이루어질 수 없음
+            if outs_before>=2:
+                return outs_added, runs
+# 만약 3루에 주자가 없으면 득점이 이루어질 수 없음
+# 이후 이벤트를 공급하는 파일에서 땅볼 타점은 3루에 주자가 있고 2사가 아닐 때만
+# 발생하도록 구현(그렇게 되면 아래 조건문은 의미가 없어짐)
+            if not self.bases.is_3B_loaded():
+                return outs_added, runs
+# 먼저 3루 주자 득점
+            runs+=score_from(3)            
+            batter.rbi+=1
+# 이후 다른 주자들의 강제 진루
+# 2루 주자는 3루로, 1루 주자는 2루로 진루
+# 3루는 반드시 비어 있으므로 조건문으로 또 확인할 필요가 없음
+            if self.bases.is_2B_loaded():
+                self.bases.move_2B_to_3B()
+# 위 조건문이 실행되든 되지 않든 여기까지 왔으면 2루는 비어 있음
+            if self.bases.is_1B_loaded():
+                self.bases.move_1B_to_2B()
+            return outs_added, runs
 # 아웃 이벤트가 발생했을 때
 # 지금은 어떤 아웃이든 득점이 인정되지 않도록 설정되어 있음
 # 그러나 실제로는 아웃 이벤트에서도 득점은 발생할 수 있음(주자 3루에서 땅볼 등)
