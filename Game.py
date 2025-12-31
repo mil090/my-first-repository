@@ -202,7 +202,7 @@ class Game:
 # 땅볼 타점이 발생했을 때
 # 3루 주자 득점, 다른 주자들은 1베이스씩 진루
         if event==BattingEvent.GROUNDOUT_RBI:
-            outs_added+=1
+            outs_added=1
             runs=0
 # 만약 2아웃이라면 땅볼 아웃으로는 득점이 이루어질 수 없음
             if outs_before>=2:
@@ -241,6 +241,38 @@ class Game:
             else:
                 outs_added=1
             return outs_added, 0
+# 득점이 나오는 병살타가 발생했을 때
+# 득점이 기록되더라도 타자에게 타점은 인정되지 않음
+        if event==BattingEvent.GIDP_RUN:
+# 2아웃이면 병살타가 성립하지 않으므로 그냥 아웃만 하나 늘어남
+# 추후 이벤트 공급 파일에서 2사 이후에는 병살타가 아예 나오지 않도록 설계
+            if outs_before>=2:
+                outs_added=1
+                return outs_added, 0
+# 1아웃이면 병살타와 동시에 (반)이닝 종료
+# 득점은 발생할 수 없음
+            elif outs_before==1:
+                if self.bases.is_1B_loaded():
+                    first_state=self.bases.delete_1B_runner()
+                    outs_added=2
+                else:
+                    outs_added=1
+                return outs_added, 0
+# 0아웃이면 병살타로도 득점은 발생하나 타자의 타점은 올라가지 않음
+# 다만 투수의 실점(상황에 따라 자책점까지)은 올라감(이는 Bases에서 이미 구현)
+# 주자가 1/3루였다면 모든 주자가 사라지고, 만루였다면 2루 주자가 3루로 진루
+            elif outs_before==0:
+                if not self.bases.is_1B_loaded():
+                    outs_added=1
+                    return outs_added, 0
+                outs_added=2
+                if self.bases.is_3B_loaded():
+                    runs+=score_from(3)
+                if self.bases.is_2B_loaded():
+                    self.bases.move_2B_to_3B()
+                if self.bases.is_1B_loaded():
+                    first_state=self.bases.delete_1B_runner()
+                return outs_added, runs
 # 희생번트가 발생했을 때
 # 편의상 스퀴즈는 생각하지 않기로 함(일단 1루->2루 진루, 2루->3루 진루, 또는 둘 다 동시만)
         if event==BattingEvent.SAC_BUNT:
@@ -574,24 +606,45 @@ if __name__=='__main__':
         BattingEvent.HOMERUN,
         BattingEvent.STRIKEOUT
     ]
+# 2회초: LG공격
+# 박동원 사구-이주헌 2루타-박해민 땅볼(1타점)-홍창기 안타(1타점)-신민재 병살타
+    top_2_events=[
+        BattingEvent.HBP,
+        BattingEvent.DOUBLE,
+        BattingEvent.GROUNDOUT_RBI,
+        BattingEvent.SINGLE,
+        BattingEvent.GIDP
+    ]
+# 경기 game1을 초기화
     game1=Game(lg_lineup, lotte_lineup)
+# 초기 점수는 0:0
     game1.get_current_score()
+# 1회초 LG공격
     res_top1=game1.play_half_inning(top_1_events)
     print(f'{game1.inning}회', '초' if game1.is_top else '말', f': {game1.away.team_name if game1.is_top else game1.home.team_name}공격')
     for event in top_1_events:
         print(event)
     print(res_top1)
     print(game1.get_current_score())
+    game1.print_last_logs(len(game1.logs))
+# 1회초 종료. 공수교대
     game1.switch_sides()
+# 1회말 롯데공격
     res_bot1=game1.play_half_inning(bot_1_events)
     print(f'{game1.inning}회', '초' if game1.is_top else '말', f': {game1.away.team_name if game1.is_top else game1.home.team_name}공격')
     for event in bot_1_events:
         print(event)
     print(res_bot1)
     print(game1.get_current_score())
-    game1.print_last_logs()
-    for i in range(len(game1.logs)):
-        print(game1.logs[i].score_after)
+    game1.print_last_logs(len(game1.logs))
+# 1회말 종료. 공수교대
+    game1.switch_sides()
+    game1.inning
+# 2회초 LG공격
+    res_top2=game1.play_half_inning(top_2_events)
+    print(f'{game1.inning}회', '초' if game1.is_top else '말', f': {game1.away.team_name if game1.is_top else game1.home.team_name}공격')
+    game1.print_last_logs(len(game1.logs))
+    game1.get_current_score()
 # 1이닝 진행 프로그램으로 병합
 # 아래를 실행하기 전에 라인업을 초기화할 것
     events_by_inning1={1: (top_1_events, bot_1_events)}
