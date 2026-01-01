@@ -615,6 +615,14 @@ if __name__=='__main__':
         BattingEvent.SINGLE,
         BattingEvent.GIDP
     ]
+# 2회말: 롯데공격
+# 손호영 2루타-유강남 안타-전민재 병살타(1득점)-황성빈 뜬공
+    bot_2_events=[
+        BattingEvent.DOUBLE,
+        BattingEvent.SINGLE,
+        BattingEvent.GIDP_RUN,
+        BattingEvent.OUT
+    ]
 # 경기 game1을 초기화
     game1=Game(lg_lineup, lotte_lineup)
 # 초기 점수는 0:0
@@ -646,6 +654,16 @@ if __name__=='__main__':
     game1.print_last_logs(len(game1.logs))
     game1.get_current_score()
     game1.away.get_current_batter().name
+    ydh.print_stats()
+    chi.print_stats()
+# 2회초 종료. 공수교대
+    game1.switch_sides()
+    game1.inning
+    game1.is_top
+    res_bot2=game1.play_half_inning(bot_2_events)
+    game1.print_last_logs(len(game1.logs))
+    game1.get_current_score()
+    jmj.print_stats()
 
 # 1이닝 진행 프로그램으로 병합
 # 아래를 실행하기 전에 라인업을 초기화할 것
