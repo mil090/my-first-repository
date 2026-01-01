@@ -113,7 +113,7 @@ class EventSupplier:
         return self._clamp(base+adj, lo, hi)
 
 # 투수 고유 이벤트에 대한 샘플링
-    def sample_pitching_evnet(self, pitcher: PitcherProfile,
+    def sample_pitching_event(self, pitcher: PitcherProfile,
                               bases: Bases) -> Optional[PitchingEvent]:
         if not isinstance(pitcher, PitcherProfile):
             raise TypeError(f'pitcher에는 투수 객체를 입력해야 합니다. 현재 pitcher의 데이터형은 {type(pitcher)}입니다.')
@@ -142,3 +142,82 @@ class EventSupplier:
             return PitchingEvent.BALK
 # 이 값이 폭투 확률+보크 확률보다 크다면 None을 반환(폭투/보크 미발생)
         return None
+
+# 투구 결과 샘플링 함수
+    def sample_pitch_result(self, batter: BatterProfile,
+                            pitcher: PitcherProfile,
+                            bases: Optional[Bases],
+                            state: PlateAppearanceState) -> PitchResult:
+# 폭투/보크는 주자가 있을 때에만 발생 가능
+        if not bases.is_empty():
+            pe=self.sample_pitching_event(pitcher, bases)
+            if pe==PitchingEvent.WP:
+                return PitchResult.WP
+            elif pe==PitchingEvent.BALK:
+                return PitchResult.BALK
+# 타자 객체의 컨택, 선구안, 파워 능력치를 각각 0~1 값으로 보정
+        con=self._ability_scale_0_1(batter.contact)
+        eye=self._ability_scale_0_1(batter.eye)
+        power=self._ability_scale_0_1(batter.power)
+# 투수 객체의 구위, 구속, 제구 능력치를 각각 0~1 값으로 보정
+        stuff=self._ability_scale_0_1(pitcher.power)
+        velo=self._ability_scale_0_1(pitcher.speed)
+        cmd=self._ability_scale_0_1(pitcher.command)
+# zone_p: 투수가 던진 공이 스트라이크존에 들어올 확률
+# 투수의 제구 능력치가 높을수록 증가함
+# 타자의 선구안 능력치가 높을수록 감소함
+# 하나의 투구가 스트라이크존에 들어올 확률은 최대 0.8, 최소 0.2
+        zone_p=self._clamp(0.45+0.25*cmd-0.10*eye, 0.20, 0.80)
+# in_zone: 투수가 던진 공이 스트라이크존에 들어왔는지 판별하는 bool 값
+        in_zone=self.rng.random()<zone_p
+
+# swing_p: 타자가 스윙할 확률
+# 1. 존에 들어온 공일 경우
+# 투수의 구속이 높을수록 증가, 타자의 선구안이 높을수록 감소
+# 존에 들어온 공을 스윙할 확률은 최대 0.9, 최소 0.2
+        if in_zone:
+            swing_p=self._clamp(0.55+0.15*(1.0-eye)+0.10*velo,
+                                0.20, 0.90)
+# 2. 존을 벗어난 공일 경우
+# 투수의 제구가 높을수록 증가, 타자의 선구안이 높을수록 감소
+# 존을 벗어난 공을 스윙할 확률은 최대 0.7, 최소 0.05
+        else:
+            swing_p=self._clamp(0.20+0.20*(1.0-eye)+0.05*cmd,
+                                0.05, 0.70)
+# swung: 타자가 공에 스윙했는지 판별하는 bool 값
+        swung=self.rng.random()<swing_p
+
+# 사구: 볼일 때 낮은 확률로 발생
+# 제구가 높을수록 사구 확률이 감소
+        if not in_zone and not swung and self.rng.random()<0.002*(1.0+1.5*(1.0-cmd)):
+            return PitchResult.HBP
+
+# 타자가 스윙을 하지 않은 경우
+# 존에 들어왔으면 스트라이크, 벗어났으면 볼
+        if not swung:
+            return PitchResult.CALLED_STRIKE if in_zone else PitchResult.BALL
+
+# 타자가 스윙을 한 경우
+# 컨택에 성공했다면 파울 or 정타(인플레이), 실패했다면 헛스윙
+# contact_p: 타자가 컨택에 성공할 확률
+# 투수의 구속, 구위가 높을수록 컨택 성공 확률이 감소
+# 타자의 컨택이 높을수록 컨택 성공 확률이 증가
+# 컨택 성공 확률은 최대 0.95, 최소 0.1
+        elif swung:
+            contact_p=self._clamp(0.72+0.18*con-0.20*(0.6*stuff+0.4*velo), 
+                                  0.10, 0.95)
+# 만약 난수 값이 컨택 확률보다 높다면 실패(헛스윙)
+            if self.rng.random()>contact_p:
+                return PitchResult.SWINGING_STRIKE
+# 만약 컨택에 성공했다면 파울 or 정타(인플레이)
+# 스트라이크 카운트가 늘어날수록 정타보다는 파울이 좀 더 많이 나온다고 가정
+# foul_p: 타자가 친 공이 파울이 될 확률
+# 타자의 컨택이 높을수록 파울 확률이 감소, 정타 확률이 증가
+# 투수의 구위가 높을수록 파울 확률이 증가, 정타 확률이 감소
+# 파울이 될 확률은 최대 0.6, 최소 0.1
+            else:
+                foul_p=self._clamp(0.30-0.10*con+0.05*state.strikes+0.15*stuff)
+                if self.rng.random()<foul_p:
+                    return PitchResult.FOUL
+                else:
+                    return PitchResult.IN_PLAY
