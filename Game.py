@@ -224,6 +224,24 @@ class Game:
             if self.bases.is_1B_loaded():
                 self.bases.move_1B_to_2B()
             return outs_added, runs
+# 진루타 뜬공(타자 아웃, 2루 주자 3루까지)이 발생했을 때
+# 2루 주자 3루 진루만이 발생하므로 아웃은 1 증가, 득점은 발생하지 않음
+        if event==BattingEvent.FLYOUT_ADV:
+            outs_added=1
+            runs=0
+# 만약 2사 이후라면 일반 아웃과 똑같이 처리. 진루는 발생하지 않음(잔루 처리)
+            if outs_before>=2:
+                return outs_added, runs
+# 만약 2사가 아니라도 2루에 주자가 없다면 진루타 뜬공은 의미가 없으므로 일반 아웃과
+# 똑같이 처리(애초에 진루타 뜬공은 이벤트 공급 파일에서 2사가 아니고 2루에 주자가 있으며
+# 3루에 주자가 없을 때만 발생하도록 설계할 예정)
+            if not self.bases.is_2B_loaded():
+                return outs_added, runs
+# 3루가 비어 있다면 2루 주자가 태그업하여 3루로 이동
+# 어떤 경우든 아웃은 1, 득점은 0
+            if not self.bases.is_3B_loaded():
+                self.bases.move_2B_to_3B()
+                return outs_added, runs
 # 아웃 이벤트가 발생했을 때
 # 지금은 어떤 아웃이든 득점이 인정되지 않도록 설정되어 있음
 # 그러나 실제로는 아웃 이벤트에서도 득점은 발생할 수 있음(주자 3루에서 땅볼 등)
@@ -630,28 +648,22 @@ if __name__=='__main__':
 # 1회초 LG공격
     res_top1=game1.play_half_inning(top_1_events)
     print(f'{game1.inning}회', '초' if game1.is_top else '말', f': {game1.away.team_name if game1.is_top else game1.home.team_name}공격')
-    for event in top_1_events:
-        print(event)
-    print(res_top1)
+    game1.print_last_logs(len(top_1_events))
     print(game1.get_current_score())
-    game1.print_last_logs(len(game1.logs))
 # 1회초 종료. 공수교대
     game1.switch_sides()
 # 1회말 롯데공격
     res_bot1=game1.play_half_inning(bot_1_events)
     print(f'{game1.inning}회', '초' if game1.is_top else '말', f': {game1.away.team_name if game1.is_top else game1.home.team_name}공격')
-    for event in bot_1_events:
-        print(event)
-    print(res_bot1)
+    game1.print_last_logs(len(bot_1_events))
     print(game1.get_current_score())
-    game1.print_last_logs(len(game1.logs))
 # 1회말 종료. 공수교대
     game1.switch_sides()
     game1.inning
 # 2회초 LG공격
     res_top2=game1.play_half_inning(top_2_events)
     print(f'{game1.inning}회', '초' if game1.is_top else '말', f': {game1.away.team_name if game1.is_top else game1.home.team_name}공격')
-    game1.print_last_logs(len(game1.logs))
+    game1.print_last_logs(len(top_2_events))
     game1.get_current_score()
     game1.away.get_current_batter().name
     ydh.print_stats()
@@ -660,10 +672,13 @@ if __name__=='__main__':
     game1.switch_sides()
     game1.inning
     game1.is_top
+# 2회말 롯데공격
     res_bot2=game1.play_half_inning(bot_2_events)
-    game1.print_last_logs(len(game1.logs))
+    print(f'{game1.inning}회', '초' if game1.is_top else '말', f': {game1.away.team_name if game1.is_top else game1.home.team_name}공격')
+    game1.print_last_logs(len(bot_2_events))
     game1.get_current_score()
     jmj.print_stats()
+    jmj.ab_isp
 
 # 1이닝 진행 프로그램으로 병합
 # 아래를 실행하기 전에 라인업을 초기화할 것

@@ -34,6 +34,12 @@ class BattingEvent(Enum):
 # 진루타 타점: 타자는 땅볼로 아웃되나 그 사이 3루 주자가 득점하는 상황
 # 진루타 타점은 3루 주자에만 해당됨
     GROUNDOUT_RBI=auto()
+# 진루타 뜬공: 타자는 뜬공으로 아웃되나 그 사이 2루 주자가 태그업하여 3루로 이동하는 상황
+# 1루 주자의 태그업은 거의 없으므로 만들지 않음
+# 진루타 뜬공은 2사가 아니고 2루에 주자가 있을 때만 발생
+# 편의상 희생플라이와 같이 발생하지는 않는 것으로 가정
+# 즉 진루타 뜬공은 2사가 아니고 2루 주자 있고 3루 주자 없을 때만 발생
+    FLYOUT_ADV=auto()
 # 특수 계열: 병살타, 희생번트, 희생플라이, 득점이 있는 병살타
     GIDP=auto()
     SAC_BUNT=auto()
@@ -92,7 +98,9 @@ class Stats:
         is_ab_event=event in (BattingEvent.SINGLE, BattingEvent.DOUBLE,
                               BattingEvent.TRIPLE, BattingEvent.HOMERUN,
                               BattingEvent.STRIKEOUT, BattingEvent.OUT,
-                              BattingEvent.GIDP, BattingEvent.GROUNDOUT_ADV)
+                              BattingEvent.GIDP, BattingEvent.GROUNDOUT_ADV,
+                              BattingEvent.GROUNDOUT_RBI, BattingEvent.GIDP_RUN,
+                              BattingEvent.FLYOUT_ADV)
 # 1. 타자의 결과가 어떻게 되든, 타석 수는 반드시 1 증가
         self.batter.pa+=1
 # 득점권/대타 여부는 타석 시작 시점을 기준으로 판단하므로, 모든 이벤트보다 먼저 
@@ -141,6 +149,8 @@ class Stats:
             self._handle_groundout_rbi()
         elif event==BattingEvent.GIDP_RUN:
             self._handle_gidp_run()
+        elif event==BattingEvent.FLYOUT_ADV:
+            self._handle_flyout_adv()
         else:
             raise ValueError(f'Unhandled BattingEvent: {event}')
 # 3. 투수가 잡은 아웃카운트 계산
@@ -278,6 +288,12 @@ class Stats:
 # 득점, 실점은 Game에서 구현
     def _handle_gidp_run(self):
         self._handle_gidp()
+# 12. 진루타 뜬공(FLYOUT_ADV)
+# Stats에서 처리하는 기록은 삼진이 아닌 아웃과 동일
+# 타자: 타수+1
+# 투수: 상대타수+1, 아웃+1
+    def _handle_flyout_adv(self):
+        self._handle_out()
 
 # 투수의 고유 이벤트에 대한 기록 처리 함수
 # 폭투나 보크는 타석의 결과로 발생하는 결과가 아니기 때문에, record_plate_appearance
