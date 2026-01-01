@@ -158,7 +158,6 @@ class EventSupplier:
 # 타자 객체의 컨택, 선구안, 파워 능력치를 각각 0~1 값으로 보정
         con=self._ability_scale_0_1(batter.contact)
         eye=self._ability_scale_0_1(batter.eye)
-        power=self._ability_scale_0_1(batter.power)
 # 투수 객체의 구위, 구속, 제구 능력치를 각각 0~1 값으로 보정
         stuff=self._ability_scale_0_1(pitcher.power)
         velo=self._ability_scale_0_1(pitcher.speed)
@@ -262,12 +261,37 @@ class EventSupplier:
         else:
             return BattingEvent.HOMERUN
 
+# 타구의 결과가 아웃일 때 일부를 병살로 바꾸는 함수
+    def _maybe_upgrade_out_to_gidp(self, bases: Bases, outs: int, batter: BatterProfile) -> BattingEvent:
+        speed=self._ability_scale_0_1(batter.speed)
+        gidp=self.cfg.gidp_given_groundball
+        if outs>=2:
+            return BattingEvent.OUT
+        if not bases.is_1B_loaded():
+            return BattingEvent.OUT
+        if self.rng.random()>self.cfg.groundball_share_of_outs:
+            return BattingEvent.OUT
+# 주력이 높을수록 땅볼 타구가 병살로 바뀔 확률이 감소
+        gidp_adj=0.10*(0.5-speed)
+        gidp=self._clamp(gidp+gidp_adj, 0.01, 0.20)
+        if self.rng.random()<gidp:
+            return BattingEvent.GIDP
+        return BattingEvent.OUT
 # 인플레이 타구의 결과 처리 함수
     def sample_ball_in_play_outcome(
             self, batter: BatterProfile, pitcher: PitcherProfile,
             bases: Optional[Bases], outs: int=0
     ) -> BattingEvent:
-# 타자 객체의 컨택, 파워/투수 객체의 구위 수치를 0부터 1 사이의 값으로 보정
+# 타자 객체의 컨택, 파워, 주력/투수 객체의 구위 수치를 0부터 1 사이의 값으로 보정
         con=self._ability_scale_0_1(batter.contact)
         power=self._ability_scale_0_1(batter.power)
+        speed=self._ability_scale_0_1(batter.speed)
         stuff=self._ability_scale_0_1(pitcher.power)
+# hip: 인플레이 타구가 안타가 될 확률
+# 타자의 컨택, 파워가 높을수록 안타 확률이 증가
+# 투수의 구위가 높을수록 안타 확률이 감소
+        hip=self._clamp(0.28+0.10*con+0.05*power-0.12*stuff, 0.10, 0.45)
+        if self.rng.random()<hip:
+            return self._sample_hit_type(power, speed)
+        else:
+            pass
