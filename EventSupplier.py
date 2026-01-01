@@ -61,3 +61,27 @@ class PlateAppearanceState:
 # 따라 확률로 결정
         elif pr==PitchResult.IN_PLAY:
             self.is_over=True
+
+# 타석 이벤트에 대한 확률 튜닝 클래스
+@dataclass
+class EventConfig:
+# 기본값은 대략적인 기준점으로 놓고, 각 타자/투수의 능력치에 따라 가감을 진행
+    base_walk: float=0.08
+    base_hbp: float=0.008
+    base_so: float=0.20
+# 인플레이 타구(PitchResult.IN_PLAY)가 안타가 될 확률
+    base_hit_on_ball_in_play: float=0.28
+# 인플레이 타구가 안타가 되었을 때, 장타에 대한 확률분포
+# 합이 1이 되도록 설정
+    hit_single_share: float=0.70
+    hit_double_share: float=0.22
+    hit_triple_share: float=0.03
+    hit_hr_share: float=0.05
+# 특수 타격 이벤트(희생타/병살타/진루타 등)는 Game이 상황을 보고 호출하도록 설정
+# OUT의 일부를 땅볼, (1사 이하이고 주자가 있다는 가정 하에서) 땅볼의 일부가
+# 병살타로 연결된다고 가정
+    gidp_given_groundball: float=0.10
+    groundball_share_of_outs: float=0.45
+# 투수 고유 이벤트 확률
+    base_wp: float=0.01
+    base_balk: float=0.002
