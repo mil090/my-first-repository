@@ -221,3 +221,53 @@ class EventSupplier:
                     return PitchResult.FOUL
                 else:
                     return PitchResult.IN_PLAY
+
+# 안타 타구의 비율 분포 설정 함수
+# 안타가 났을 때 1/2/3/홈 분포를 파워, 구위로 보정
+# 타자의 파워가 높을수록 홈런/2루타 비중이 증가
+# 타자의 주력이 높을수록 3루타 비중이 증가
+    def _sample_hit_type(self, pow01: float, spe01: float) -> BattingEvent:
+# 기본 분포
+        s=self.cfg.hit_single_share
+        d=self.cfg.hit_double_share
+        t=self.cfg.hit_triple_share
+        hr=self.cfg.hit_hr_share
+# 파워 보정
+        hr_adj=0.06*(pow01-0.5)
+        d_adj=0.04*(pow01-0.5)
+        hr=self._clamp(hr+hr_adj, 0.01, 0.20)
+        d=self._clamp(d+d_adj, 0.10, 0.35)
+# 주력 보정
+        t_adj=0.05*(spe01-0.5)
+        t=self._clamp(t+t_adj, 0.0, 0.08)
+# 안타 타구가 단타일 확률: 1-장타 확률
+        s=1.0-(d+t+hr)
+# 단타 확률이 0.4 미만으로 작아지면 보정
+        if s<0.40:
+            s=0.40
+            rem=1.0-(s+t)
+            dh=d+hr
+            if dh<=1e-9:
+                d, hr=rem*0.8, rem*0.2
+            else:
+                d=rem*(d/dh)
+                hr=rem*(hr/dh)
+        u=self.rng.random()
+        if u<s:
+            return BattingEvent.SINGLE
+        elif u<s+d:
+            return BattingEvent.DOUBLE
+        elif u<s+d+t:
+            return BattingEvent.TRIPLE
+        else:
+            return BattingEvent.HOMERUN
+
+# 인플레이 타구의 결과 처리 함수
+    def sample_ball_in_play_outcome(
+            self, batter: BatterProfile, pitcher: PitcherProfile,
+            bases: Optional[Bases], outs: int=0
+    ) -> BattingEvent:
+# 타자 객체의 컨택, 파워/투수 객체의 구위 수치를 0부터 1 사이의 값으로 보정
+        con=self._ability_scale_0_1(batter.contact)
+        power=self._ability_scale_0_1(batter.power)
+        stuff=self._ability_scale_0_1(pitcher.power)
