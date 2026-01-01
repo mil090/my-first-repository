@@ -85,3 +85,60 @@ class EventConfig:
 # 투수 고유 이벤트 확률
     base_wp: float=0.01
     base_balk: float=0.002
+
+# 이벤트를 공급하는 클래스
+# Game에서 다음 타석 결과를 물으면 그에 대한 이벤트를 뽑아 공급하는 역할
+class EventSupplier:
+    def __init__(self, seed: Optional[int]=None,
+                 config: Optional[EventConfig]=None):
+        self.rng=random.Random(seed)
+        self.cfg=config or EventConfig()
+# 내부 유틸: 확률 보정 함수
+    @staticmethod
+# _clamp: 각 확률의 최대/최솟값 조정
+# 만약 보정된 확률이 이 범위를 넘어간다면 최댓값이나 최솟값으로 제한
+# 현실성 보장을 위한 장치. 확률이 제멋대로 극단적인 값으로 튀는 것을 제한
+    def _clamp(x: float, lo: float, hi: float) -> float:
+        return lo if x<lo else hi if x>hi else x
+# _ability_scale_0_1: 선수의 능력치에 대한 표준화
+# 각 선수의 능력치 수치는 1부터 100까지 99개의 정수 중 하나
+# 따라서 능력치 값에서 1을 뺀 다음 이를 99로 나누어 확률에 사용할 수 있게 보정
+    def _ability_scale_0_1(self, x: int) -> float:
+        return self._clamp((x-1)/99.0, 0.0, 1.0)
+# _soft_adjust: 보정된 확률에 대한 범위 제한
+# 앞에서 정의했던 기본 확률에 능력치로 보정한 값을 더해서 이 범위를 최대와 최소
+# 사이로 제한
+    def _soft_adjust(self, base: float, adj: float, lo: float=0.0,
+                     hi: float=0.95) -> float:
+        return self._clamp(base+adj, lo, hi)
+
+# 투수 고유 이벤트에 대한 샘플링
+    def sample_pitching_evnet(self, pitcher: PitcherProfile,
+                              bases: Bases) -> Optional[PitchingEvent]:
+        if not isinstance(pitcher, PitcherProfile):
+            raise TypeError(f'pitcher에는 투수 객체를 입력해야 합니다. 현재 pitcher의 데이터형은 {type(pitcher)}입니다.')
+        if not isinstance(bases, Bases):
+            raise TypeError(f'bases에는 베이스 객체를 입력해야 합니다. 현재 bases의 데이터형은 {type(bases)}입니다.')
+        runners=bases.count_runners()
+# 폭투 및 보크는 주자가 없을 때만 발생하므로, 현재 주자가 없다면 None을 반환
+        if runners==0:
+            return None
+# 투수 객체의 제구 능력치를 0부터 1 사이의 값으로 보정
+        cmd=self._ability_scale_0_1(pitcher.command)
+# (보정된) 제구 능력치가 낮을수록 폭투/보크 확률 상승
+        wp_p=self.cfg.base_wp*(1.0+2.0*(1.0-cmd))*(1.0+0.25*(runners-1))
+        balk_p=self.cfg.base_balk*(1.0+2.5*(1.0-cmd))*(1.0+0.25*(runners-1))
+# 제구 능력치와 주자 수를 이용하여 폭투/보크 확률을 각각 계산하고, 이들을 각각의 범위 내로 제한
+# 폭투 확률은 최대 0.05, 보크 확률은 최대 0.02
+        wp_p=self._clamp(wp_p, 0.0, 0.05)
+        balk_p=self._clamp(balk_p, 0.0, 0.02)
+# 0부터 1까지의 난수를 하나 생성
+        u=self.rng.random()
+# 이 값이 폭투 확률 미만이면 폭투 결과 반환
+        if u<wp_p:
+            return PitchingEvent.WP
+# 이 값이 폭투 확률보다 크고 폭투 확률+보크 확률보다 작으면 보크 결과 반환
+        elif u<wp_p+balk_p:
+            return PitchingEvent.BALK
+# 이 값이 폭투 확률+보크 확률보다 크다면 None을 반환(폭투/보크 미발생)
+        return None

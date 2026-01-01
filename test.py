@@ -10,3 +10,7 @@ lotte=Team('꼴데')
 lotte.add_player(win_g)
 lotte.add_player(win_g2)
 lotte.print_all_players()
+
+import random
+a=random.Random(1)
+a.randrange(10, 20)
