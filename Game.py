@@ -200,6 +200,10 @@ class Game:
                     self.bases.move_1B_to_2B()
             return outs_added, 0
 # 땅볼 타점이 발생했을 때
+# 참고: 땅볼 타점은 진루타 땅볼을 포함
+# 따라서 1/2루 주자 여부에 관계없이 3루에 주자가 있다면 진루타 땅볼이 아닌 땅볼 타점
+# 이벤트만을 사용해야 함
+# 반대로 3루에 주자가 없다면 땅볼 타점은 사용 불가
 # 3루 주자 득점, 다른 주자들은 1베이스씩 진루
         if event==BattingEvent.GROUNDOUT_RBI:
             outs_added=1
@@ -641,6 +645,14 @@ if __name__=='__main__':
         BattingEvent.GIDP_RUN,
         BattingEvent.OUT
     ]
+# 3회초: LG공격
+# 오스틴 2루타-문보경 진루타 뜬공-문성주 희생플라이-오지환 삼진
+    top_3_events=[
+        BattingEvent.DOUBLE,
+        BattingEvent.FLYOUT_ADV,
+        BattingEvent.SAC_FLY,
+        BattingEvent.STRIKEOUT
+    ]
 # 경기 game1을 초기화
     game1=Game(lg_lineup, lotte_lineup)
 # 초기 점수는 0:0
@@ -679,6 +691,16 @@ if __name__=='__main__':
     game1.get_current_score()
     jmj.print_stats()
     jmj.ab_isp
+# 2회말 종료. 공수교대
+    game1.switch_sides()
+# 3회초 LG공격
+    res_top3=game1.play_half_inning(top_3_events)
+    print(f'{game1.inning}회', '초' if game1.is_top else '말', f': {game1.away.team_name if game1.is_top else game1.home.team_name}공격')
+    game1.print_last_logs(len(top_3_events))
+    game1.get_current_score()
+# 3회초 종료. 공수교대
+    game1.switch_sides()
+# 3회말 롯데공격
 
 # 1이닝 진행 프로그램으로 병합
 # 아래를 실행하기 전에 라인업을 초기화할 것
