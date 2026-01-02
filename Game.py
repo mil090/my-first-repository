@@ -2,7 +2,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, Optional, Dict, Tuple, Mapping, List
+from typing import Iterable, Optional, Dict, Tuple, Mapping, List, Callable
+import random
 
 from BatterProfile import BatterProfile
 from PitcherProfile import PitcherProfile
@@ -44,6 +45,7 @@ class PAlog:
     score_after: Dict[str, int]
     walkoff: bool=False
 
+EventSupplier=Callable[[object, object, object, int], BattingEvent]
 class Game:
 # 최소 목표
 # 반 이닝(3아웃) 동안 타석을 진행
@@ -485,6 +487,79 @@ class Game:
 # 동점 상황인지 반환하는 함수
     def is_tie(self) -> bool:
         return self.score[self.away.team]==self.score[self.home.team]
+
+# 이벤트를 공급받아 3아웃이 될 때까지 (반)이닝을 진행하도록 만들어 보면?
+    # def play_half_inning_with_supplier(self,
+    #                                    next_event: EventSupplier,
+    #                                    allow_walkoff: bool=False,
+    #                                    max_pa: int=200):
+    #     offense=self._offense()
+    #     defense=self._defense()
+    #     defense.validate_defense()
+
+    #     self.bases.clear_bases()
+    #     outs=0
+    #     runs_total=0
+    #     runs_scored=0
+    #     walkoff=False
+
+    #     away_before=self.score[self.away.team]
+    #     home_before=self.score[self.home.team]
+
+    #     pa_count=0
+    #     while outs<3 and not walkoff:
+    #         pa_count+=1
+    #         if pa_count>max_pa:
+    #             raise RuntimeError('반이닝 타석 수가 비정상적으로 많습니다. (무한 루프 의심)')
+            
+    #         batter=offense.get_current_batter()
+    #         pitcher=defense.get_current_pitcher()
+    #         if batter is None or pitcher is None:
+    #             raise RuntimeError('타자 또는 투수 객체가 없습니다. 라인업/수비 배정을 확정하세요.')
+    #         event=next_event(batter, pitcher, self.bases, outs)
+
+    #         is_risp=self.bases.is_scoring_position()
+    #         stat=Stats(batter, pitcher)
+    #         stat.record_plate_appearance(event, is_risp=is_risp, is_ph=False)
+
+    #         outs_before_pa=outs
+    #         add_outs, add_runs=self._apply_batting_event(
+    #             event, batter, pitcher, outs_before=outs
+    #         )
+    #         outs+=add_outs
+    #         runs_scored+=add_runs
+    #         runs_total+=add_runs
+
+    #         score_snapshot=self.get_current_score()
+    #         if offense is self.away:
+    #             score_snapshot[self.away.team_name]+=runs_scored
+    #         else:
+    #             score_snapshot[self.home.team_name]+=runs_scored
+    #         self.logs.append(PAlog(
+    #             inning=self.inning,
+    #             is_top=self.is_top,
+    #             outs_before=outs_before_pa,
+    #             batter=batter.name,
+    #             pitcher=pitcher.name,
+    #             event=event,
+    #             runs_scored=add_runs,
+    #             outs_added=add_outs,
+    #             score_after=score_snapshot,
+    #             walkoff=False
+    #         ))
+
+    #         if allow_walkoff and not self.is_top and self.inning>=9:
+    #             if home_before+runs_scored>away_before:
+    #                 walkoff=True
+    #                 self.score[offense.team]+=runs_scored
+    #                 if self.logs:
+    #                     self.logs[-1].walkoff=True
+    #                     self.logs[-1].score_after=self.get_current_score()
+    #                 runs_scored=0
+    #                 break
+    #         offense.next_batter()
+    #     self.score[offense.team]+=runs_scored
+    #     return HalfInningResult(runs=runs_total, outs=outs, walkoff=walkoff)
 
 # 테스트 프로그램
 if __name__=='__main__':

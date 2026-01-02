@@ -31,7 +31,7 @@ class PlateAppearanceState:
     def apply_pitch(self, pr: PitchResult):
 # 보크는 볼 카운트에 영향을 주지 않음. 폭투는 볼로 처리
         if pr==PitchResult.BALK:
-            return None
+            return
 # 투구 결과가 볼이면 볼이 1 증가. 폭투는 볼로 처리하며 주자 진루는 이후 구현
 # 폭투가 발생하면 일괄적으로 모든 주자 1베이스씩 진루로 처리(3루 주자 득점)
 # 볼이 4개가 되면 타석이 종료되고 결과는 볼넷
@@ -83,7 +83,7 @@ class EventConfig:
     gidp_given_groundball: float=0.10
     groundball_share_of_outs: float=0.45
 # 투수 고유 이벤트 확률
-    base_wp: float=0.01
+    base_wp: float=0.003
     base_balk: float=0.002
 
 # 이벤트를 공급하는 클래스
@@ -94,10 +94,10 @@ class EventSupplier:
         self.rng=random.Random(seed)
         self.cfg=config or EventConfig()
 # 내부 유틸: 확률 보정 함수
-    @staticmethod
 # _clamp: 각 확률의 최대/최솟값 조정
 # 만약 보정된 확률이 이 범위를 넘어간다면 최댓값이나 최솟값으로 제한
 # 현실성 보장을 위한 장치. 확률이 제멋대로 극단적인 값으로 튀는 것을 제한
+    @staticmethod
     def _clamp(x: float, lo: float, hi: float) -> float:
         return lo if x<lo else hi if x>hi else x
 # _ability_scale_0_1: 선수의 능력치에 대한 표준화
@@ -120,7 +120,7 @@ class EventSupplier:
         if not isinstance(bases, Bases):
             raise TypeError(f'bases에는 베이스 객체를 입력해야 합니다. 현재 bases의 데이터형은 {type(bases)}입니다.')
         runners=bases.count_runners()
-# 폭투 및 보크는 주자가 없을 때만 발생하므로, 현재 주자가 없다면 None을 반환
+# 폭투 및 보크는 주자가 있을 때만 발생하므로, 현재 주자가 없다면 None을 반환
         if runners==0:
             return None
 # 투수 객체의 제구 능력치를 0부터 1 사이의 값으로 보정
@@ -148,8 +148,16 @@ class EventSupplier:
                             pitcher: PitcherProfile,
                             bases: Optional[Bases],
                             state: PlateAppearanceState) -> PitchResult:
+        if not isinstance(batter, BatterProfile):
+            raise TypeError(f'batter에는 타자 객체를 입력해야 합니다. 현재 batter의 데이터형은 {type(batter)}입니다.')
+        if not isinstance(pitcher, PitcherProfile):
+            raise TypeError(f'pitcher에는 투수 객체를 입력해야 합니다. 현재 pitcher의 데이터형은 {type(pitcher)}입니다.')
+        if not isinstance(state, PlateAppearanceState):
+            raise TypeError(f'state에는 타석 상태 객체를 입력해야 합니다. 현재 state의 데이터형은 {type(state)}입니다.')
+        if bases is not None and not isinstance(bases, Bases):
+            raise TypeError(f'bases에는 베이스 객체를 입력해야 합니다. 현재 bases의 데이터형은 {type(bases)}입니다.')
 # 폭투/보크는 주자가 있을 때에만 발생 가능
-        if not bases.is_empty():
+        if bases is not None and not bases.is_empty():
             pe=self.sample_pitching_event(pitcher, bases)
             if pe==PitchingEvent.WP:
                 return PitchResult.WP
@@ -202,7 +210,7 @@ class EventSupplier:
 # 투수의 구속, 구위가 높을수록 컨택 성공 확률이 감소
 # 타자의 컨택이 높을수록 컨택 성공 확률이 증가
 # 컨택 성공 확률은 최대 0.95, 최소 0.1
-        elif swung:
+        else:
             contact_p=self._clamp(0.72+0.18*con-0.20*(0.6*stuff+0.4*velo), 
                                   0.10, 0.95)
 # 만약 난수 값이 컨택 확률보다 높다면 실패(헛스윙)
@@ -215,7 +223,8 @@ class EventSupplier:
 # 투수의 구위가 높을수록 파울 확률이 증가, 정타 확률이 감소
 # 파울이 될 확률은 최대 0.6, 최소 0.1
             else:
-                foul_p=self._clamp(0.30-0.10*con+0.05*state.strikes+0.15*stuff)
+                foul_p=self._clamp(0.30-0.10*con+0.05*state.strikes+0.15*stuff,
+                                   0.10, 0.60)
                 if self.rng.random()<foul_p:
                     return PitchResult.FOUL
                 else:
@@ -245,12 +254,20 @@ class EventSupplier:
         if s<0.40:
             s=0.40
             rem=1.0-(s+t)
+            if rem<0:
+                rem=0.0
             dh=d+hr
             if dh<=1e-9:
                 d, hr=rem*0.8, rem*0.2
             else:
                 d=rem*(d/dh)
                 hr=rem*(hr/dh)
+        total=s+d+t+hr
+        if abs(total-1.0)>1e-9:
+            s/=total
+            d/=total
+            t/=total
+            hr/=total
         u=self.rng.random()
         if u<s:
             return BattingEvent.SINGLE
@@ -290,8 +307,18 @@ class EventSupplier:
 # hip: 인플레이 타구가 안타가 될 확률
 # 타자의 컨택, 파워가 높을수록 안타 확률이 증가
 # 투수의 구위가 높을수록 안타 확률이 감소
-        hip=self._clamp(0.28+0.10*con+0.05*power-0.12*stuff, 0.10, 0.45)
+        hip=self._clamp(self.cfg.base_hit_on_ball_in_play+0.10*con+0.05*power-0.12*stuff, 0.10, 0.45)
         if self.rng.random()<hip:
             return self._sample_hit_type(power, speed)
+# 병살타는 1루에 주자가 있을 때만 발생 가능
         else:
-            pass
+            if bases is not None and bases.is_1B_loaded():
+                return self._maybe_upgrade_out_to_gidp(bases=bases, outs=outs, batter=batter)
+            return BattingEvent.OUT
+
+# 테스트 프로그램
+if __name__=='__main__':
+    psw=PitcherProfile('박세웅', '롯데', '선발')
+    ojh=BatterProfile('오지환', 'LG', '내야수', 'R', 'L')
+    event=EventSupplier()
+    event.sample_pitch_result(ojh, psw, )
