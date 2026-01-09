@@ -808,3 +808,5 @@ if __name__=='__main__':
     for r in results2:
         print(r.inning, r.score_after, 'ended' if r.ended else "", 
               'walkoff' if (r.bottom and r.bottom.walkoff) else "")
+    game2.print_last_logs(len(game2.logs))
+    game2.get_current_score()
